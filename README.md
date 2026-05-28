@@ -32,3 +32,73 @@ QuizTube 聚焦三个核心目标：
 - 需要高频复习技术视频/课程的学习者
 - 想把视频内容沉淀成结构化知识卡片的创作者
 - 希望快速搭建“视频转笔记 + 测验复习”流程的开发者
+
+## 本地部署攻略
+
+### 1) 环境准备
+
+- 操作系统：macOS / Linux（Windows 建议使用 WSL）
+- Python：`3.9+`（推荐 `3.10+`）
+- 必备工具：
+  - `ffmpeg`（音频切片）
+  - `yt-dlp`（视频/字幕抓取）
+
+macOS 可用 Homebrew 安装：
+
+```bash
+brew install ffmpeg yt-dlp
+```
+
+### 2) 拉取项目并安装依赖
+
+```bash
+git clone https://github.com/threeorz1027-svg/quiztube.git
+cd quiztube
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3) 启动项目
+
+```bash
+uvicorn app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+浏览器打开：
+
+- `http://127.0.0.1:8000`
+
+### 4) 配置 API（推荐在页面里配置）
+
+项目内置了 **API配置** 页面：
+
+1. 打开左侧导航 `API配置`
+2. 填写 Chat/ASR 的 `Base URL`、`Model`、`API Key`
+3. 点击保存后立即生效
+
+> 配置优先级：页面本地配置 > 系统环境变量
+
+### 5) 可选：环境变量方式配置
+
+如果你更习惯命令行，也可在启动前手动设置：
+
+```bash
+export MIMO_API_KEY="your_key"
+export MIMO_BASE_URL="https://api.xiaomimimo.com/v1"
+export MIMO_CHAT_MODEL="mimo-v2-flash"
+export MIMO_TRANSCRIBE_MODEL="mimo-v2-omni"
+```
+
+### 6) 常见问题排查
+
+- **页面打不开 / Connection refused**
+  - 检查服务是否启动：`uvicorn ...`
+  - 检查端口是否被占用（默认 `8000`）
+- **ASR 报 Invalid API Key**
+  - 到 `API配置` 页面确认 Key 是否正确保存
+  - 避免多个无效环境变量覆盖
+- **提示缺少 yt-dlp / ffmpeg**
+  - 重新安装工具并确认 PATH 生效
+- **B站视频抓不到字幕**
+  - 可在配置里保持 ASR 兜底开启
