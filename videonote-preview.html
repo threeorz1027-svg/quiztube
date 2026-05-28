@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizTube - 方案A 交互原型系统</title>
+    <!-- 引入 Tailwind CSS 驱动高效布局 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-base: #f3f5ff;
+            --bg-soft: #eef2ff;
+            --text-primary: #1c2240;
+            --text-secondary: #616b89;
+            --text-muted: #8b94b2;
+            --line-soft: #e7ebfb;
+            --brand: #5b63ff;
+            --brand-strong: #4a52f0;
+            --brand-soft: #eef0ff;
+            --surface: rgba(255, 255, 255, 0.88);
+            --surface-strong: #ffffff;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --shadow-soft: 0 10px 30px rgba(68, 83, 170, 0.08);
+            --shadow-hover: 0 14px 36px rgba(68, 83, 170, 0.13);
+        }
+
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+
+        .job-progress-track {
+            height: 7px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: #e8edff;
+        }
+
+        .job-progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #5b63ff 0%, #7a80ff 100%);
+            transition: width 280ms ease;
+        }
+
+        #process-center-trigger.is-busy {
+            animation: processPulse 1.4s infinite;
+        }
+
+        @keyframes processPulse {
+            0% { box-shadow: 0 0 0 0 rgba(91, 99, 255, 0.25); }
+            70% { box-shadow: 0 0 0 8px rgba(91, 99, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(91, 99, 255, 0); }
+        }
+
+        body {
+            background:
+                radial-gradient(1100px 500px at 100% -20%, #dde3ff 0%, transparent 55%),
+                radial-gradient(900px 450px at -10% 0%, #e7ecff 0%, transparent 55%),
+                var(--bg-base);
+            color: var(--text-primary);
+        }
+
+        header {
+            border-color: var(--line-soft) !important;
+            background: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(69, 84, 169, 0.06);
+        }
+
+        #nav-workbench,
+        #nav-notes,
+        #nav-quiz {
+            border: 1px solid transparent;
+            border-radius: 14px;
+        }
+
+        #notes-nav-children {
+            margin-top: 4px;
+            border-left: 1px dashed #d7ddf7;
+            margin-left: 14px;
+            padding-left: 10px;
+        }
+
+        #notes-nav-children button {
+            border-radius: 10px;
+        }
+
+        main {
+            background: transparent !important;
+        }
+
+        #view-workbench .bg-white,
+        #view-editor .bg-white,
+        #view-library .bg-white,
+        #view-quiz .bg-white,
+        #view-quiz-success .bg-white {
+            background: var(--surface);
+            border-color: var(--line-soft) !important;
+            box-shadow: var(--shadow-soft);
+            backdrop-filter: blur(4px);
+        }
+
+        #view-workbench .bg-white:hover,
+        #view-library .bg-white:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        #view-workbench h1 {
+            letter-spacing: -0.02em;
+            font-size: clamp(2rem, 4.5vw, 2.85rem);
+            line-height: 1.12;
+        }
+
+        #view-workbench p,
+        #view-library p,
+        #view-quiz p {
+            color: var(--text-secondary);
+        }
+
+        input[type="text"],
+        textarea {
+            background: #fff;
+            border: 1px solid var(--line-soft) !important;
+            border-radius: 12px !important;
+            transition: all 160ms ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            border-color: #b5bcff !important;
+            box-shadow: 0 0 0 4px rgba(91, 99, 255, 0.12);
+        }
+
+        button {
+            transition: transform 160ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .bg-blue-600,
+        .hover\:bg-blue-700:hover {
+            background-color: var(--brand) !important;
+        }
+
+        .hover\:bg-blue-700:hover {
+            background-color: var(--brand-strong) !important;
+            box-shadow: 0 10px 24px rgba(88, 96, 235, 0.24);
+        }
+
+        .bg-blue-50 {
+            background-color: var(--brand-soft) !important;
+        }
+
+        .text-blue-700 {
+            color: #404ad5 !important;
+        }
+
+        .border-gray-200,
+        .border-gray-100 {
+            border-color: var(--line-soft) !important;
+        }
+
+        #toast-tip {
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(24, 29, 59, 0.92) !important;
+            border-radius: 14px;
+        }
+
+        #view-editor .bg-gray-900 {
+            border-radius: var(--radius-xl);
+            box-shadow: 0 18px 35px rgba(17, 25, 66, 0.24);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        #view-library .space-y-3 > div,
+        #view-quiz .rounded-2xl,
+        #view-quiz-success .max-w-sm {
+            border-radius: var(--radius-xl) !important;
+        }
+
+        #view-quiz button.w-full {
+            border-radius: 14px;
+            border-width: 1px !important;
+        }
+
+        #view-quiz button.w-full:hover {
+            border-color: #c7cdfa !important;
+            background: #f8f9ff !important;
+        }
+
+        /* Joi-style stronger visual pass */
+        body {
+            background:
+                radial-gradient(1200px 620px at 92% -10%, #d7dcff 0%, transparent 58%),
+                radial-gradient(860px 480px at -10% 0%, #e8ecff 0%, transparent 56%),
+                #f2f4ff;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.72) !important;
+            backdrop-filter: blur(14px);
+            box-shadow: 0 8px 30px rgba(69, 84, 169, 0.09);
+        }
+
+        .flex-1.flex.overflow-hidden.w-full {
+            max-width: none;
+            width: 100%;
+            margin: 0;
+            padding: 6px;
+            gap: 6px;
+            overflow: visible !important;
+        }
+
+        aside.w-56 {
+            border-radius: 22px;
+            border: 1px solid #dde2fa !important;
+            box-shadow: 0 14px 38px rgba(62, 80, 163, 0.12);
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(8px);
+            position: sticky;
+            top: 62px;
+            height: calc(100vh - 68px);
+        }
+
+        main {
+            border-radius: 26px;
+            border: 1px solid #dde2fa !important;
+            box-shadow: 0 16px 40px rgba(51, 68, 145, 0.12);
+            background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.68)) !important;
+            backdrop-filter: blur(6px);
+            min-height: calc(100vh - 68px);
+        }
+
+        #view-workbench h1 {
+            font-size: clamp(2.2rem, 5vw, 3.15rem);
+            line-height: 1.06;
+            letter-spacing: -0.03em;
+        }
+
+        #view-workbench .grid.grid-cols-3 > div {
+            border: 1px solid #e1e6fb !important;
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.72));
+        }
+
+        .bg-blue-600,
+        .hover\:bg-blue-700:hover {
+            background: linear-gradient(135deg, #6269ff 0%, #5360ff 55%, #4e57ee 100%) !important;
+        }
+
+        .hover\:bg-blue-700:hover {
+            box-shadow: 0 12px 26px rgba(88, 96, 235, 0.28) !important;
+        }
+
+        #view-library .space-y-4 > div,
+        #view-quiz .rounded-2xl,
+        #view-quiz-success .max-w-sm {
+            border: 1px solid #e1e6fb !important;
+            box-shadow: 0 12px 30px rgba(76, 92, 173, 0.1) !important;
+        }
+
+        #view-quiz-success .max-w-sm {
+            border-radius: 24px;
+            padding: 26px 20px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        #quiz-next-action-btn {
+            color: #ffffff !important;
+            background: #0f172a !important;
+            border: 1px solid #111827 !important;
+        }
+
+        #quiz-next-action-btn:hover {
+            background: #000000 !important;
+        }
+
+        .cornell-layout {
+            display: grid;
+            grid-template-rows: minmax(360px, 1fr) auto;
+            gap: 12px;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .cornell-main-grid {
+            display: grid;
+            grid-template-columns: minmax(220px, 32%) minmax(0, 1fr);
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .cornell-pane {
+            border: 1px solid var(--line-soft);
+            border-radius: 14px;
+            padding: 12px;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .cornell-pane-header {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
+        }
+
+        #cue-list,
+        #note-items-list {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 2px;
+        }
+
+        .cornell-summary-pane {
+            border: 1px solid var(--line-soft);
+            border-radius: 14px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        .note-format-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border: 1px solid var(--line-soft);
+            border-radius: 10px;
+            background: #fff;
+        }
+
+        .note-format-toolbar button {
+            border: 1px solid var(--line-soft);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--text-primary);
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .note-format-toolbar button:hover {
+            border-color: #c7cdfa;
+            background: #f8f9ff;
+        }
+
+        .note-format-toolbar input[type="color"] {
+            width: 26px;
+            height: 22px;
+            border: 1px solid var(--line-soft);
+            border-radius: 6px;
+            padding: 0;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .rich-note-content {
+            color: #374151;
+            line-height: 1.8;
+            font-size: 14px;
+            word-break: break-word;
+            outline: none;
+        }
+
+        .rich-note-content b,
+        .rich-note-content strong {
+            color: #111827;
+            font-weight: 700;
+        }
+
+        .bili-player-shell {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9; /* B站主流视频比例 */
+            max-height: min(56vh, 520px);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+        }
+
+        @media (max-width: 1280px) {
+            .cornell-main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+
+    <!-- 1. 顶部导航栏 -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 h-14 flex items-center shrink-0 shadow-xs">
+        <div class="w-full mx-auto px-4 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchMainView('workbench', 'nav-workbench')">
+                <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">QuizTube</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button id="process-center-trigger" onclick="toggleProcessCenter(true)" class="relative w-8 h-8 rounded-full border border-gray-200 bg-white text-gray-600 hover:text-blue-600 hover:border-blue-200 transition flex items-center justify-center" title="后台进程">
+                    <span class="text-sm">⚙️</span>
+                    <span id="process-center-badge" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-blue-600 text-white text-[10px] font-bold leading-4 text-center">1</span>
+                </button>
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-semibold shadow-xs">
+                    ZS
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体框架：双栏自适应布局 -->
+    <div class="flex-1 flex overflow-hidden w-full">
+
+        <!-- 2. 左侧导航栏 -->
+        <aside class="w-56 bg-white border-r border-gray-200 flex flex-col justify-between p-3 shrink-0">
+            <div class="space-y-3">
+            <nav class="space-y-1">
+                <button id="nav-workbench" onclick="switchMainView('workbench', this.id)" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition bg-blue-50 text-blue-700">
+                    <span class="text-base">📋</span> <span>工作台</span>
+                </button>
+                <button id="nav-notes" onclick="toggleNotesMenu()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900">
+                    <span class="flex items-center space-x-3">
+                        <span class="text-base">🗂️</span>
+                        <span>笔记</span>
+                    </span>
+                    <span id="nav-notes-chevron" class="text-xs text-gray-400 transition-transform">▾</span>
+                </button>
+                <div id="notes-nav-children" class="hidden pl-3 pr-1 space-y-1">
+                    <button id="nav-notes-editor" onclick="switchMainView('editor', 'nav-notes')" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900">笔记编辑</button>
+                    <button id="nav-notes-library" onclick="switchMainView('library', 'nav-notes')" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900">笔记库</button>
+                </div>
+                <button id="nav-quiz" onclick="switchMainView('quiz', this.id)" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900">
+                    <span class="text-base">🧠</span> <span>quiz</span>
+                </button>
+                <button id="nav-settings" onclick="switchMainView('settings', this.id)" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900">
+                    <span class="text-base">⚙️</span> <span>API配置</span>
+                </button>
+            </nav>
+            </div>
+            <div class="p-2 bg-gray-50 rounded-xl text-center">
+                <p class="text-[11px] text-gray-400 font-medium">数据全自动存储本地</p>
+            </div>
+        </aside>
+
+        <!-- 3. 中间主操作区（状态多视图分发中心） -->
+        <main class="flex-1 bg-gray-50/50 p-6 overflow-y-auto">
+            
+            <!-- 全局 Toast 轻提示 -->
+            <div id="toast-tip" class="hidden fixed top-16 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-xl z-50 flex items-center space-x-2 transition-all">
+                <span id="toast-text">✅ 提示内容</span>
+            </div>
+
+            <!-- 后台进程弹窗 -->
+            <div id="process-center-modal" class="hidden fixed inset-0 z-[70]">
+                <div id="process-center-backdrop" class="absolute inset-0 bg-gray-900/25" onclick="toggleProcessCenter(false)"></div>
+                <div id="process-center-card" class="absolute top-16 right-6 w-[360px] max-w-[calc(100vw-24px)] bg-white border border-gray-200 rounded-2xl shadow-xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-50 text-blue-600 text-xs">⚙️</span>
+                            <p class="text-sm font-bold text-gray-800">后台进程</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="job-mini-status" class="hidden text-[11px] text-gray-500 font-medium"></span>
+                            <button id="process-center-min-btn" onclick="toggleProcessCenterMinimized()" class="text-gray-400 hover:text-gray-600 text-sm" title="最小化">—</button>
+                            <button onclick="toggleProcessCenter(false)" class="text-gray-400 hover:text-gray-600 text-sm" title="关闭">✕</button>
+                        </div>
+                    </div>
+                    <div id="process-center-body" class="space-y-3">
+                        <div class="bg-gray-50 border border-gray-100 rounded-xl p-3 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs font-semibold text-gray-700">视频转笔记任务</p>
+                                <span id="job-percent-text" class="text-[11px] text-gray-500 font-semibold">0%</span>
+                            </div>
+                            <p id="job-status-text" class="text-[11px] text-gray-500 leading-relaxed">待开始</p>
+                        </div>
+                        <div class="job-progress-track">
+                            <div id="job-progress-fill" class="job-progress-fill"></div>
+                        </div>
+                        <div class="bg-white border border-gray-100 rounded-xl p-3 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs font-semibold text-gray-700">最近任务</p>
+                                <span class="text-[11px] text-gray-400">最多 3 条</span>
+                            </div>
+                            <div id="process-history-list" class="space-y-1.5 text-[11px] text-gray-500">
+                                <p class="text-gray-400">暂无任务历史</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="playlist-selector-modal" class="hidden fixed inset-0 z-[75]">
+                <div class="absolute inset-0 bg-black/35" onclick="closePlaylistSelector()"></div>
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[760px] max-w-[calc(100vw-24px)] max-h-[82vh] bg-white border border-gray-200 rounded-2xl shadow-xl p-4 flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-bold text-gray-900">合集分P选择</h3>
+                        <button onclick="closePlaylistSelector()" class="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+                    </div>
+                    <p id="playlist-selector-meta" class="text-xs text-gray-500">加载中...</p>
+                    <input id="playlist-part-search" type="text" placeholder="筛选分P标题..." class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs">
+                    <div id="playlist-parts-list" class="flex-1 min-h-[280px] overflow-y-auto border border-gray-100 rounded-xl p-2 space-y-1">
+                        <p class="text-xs text-gray-400">正在加载分P...</p>
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <div class="flex items-center gap-2">
+                            <button onclick="togglePlaylistSelection(true)" class="text-xs px-2 py-1 border border-gray-200 rounded-md hover:bg-gray-50">全选</button>
+                            <button onclick="togglePlaylistSelection(false)" class="text-xs px-2 py-1 border border-gray-200 rounded-md hover:bg-gray-50">全不选</button>
+                        </div>
+                        <button onclick="confirmPlaylistSelection()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg">开始合并生成</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视图状态一：工作台视图 -->
+            <div id="view-workbench" class="view-section active max-w-3xl mx-auto py-14 space-y-10">
+                <div class="text-center space-y-3">
+                    <h1 class="text-2xl font-extrabold text-gray-950 sm:text-3xl tracking-tight">将B站视频转化为可复习的笔记</h1>
+                    <p class="text-gray-500 text-sm max-w-md mx-auto">粘贴源链接，交由AI提取康奈尔骨架，自动串联无痛防忘复习闭环。</p>
+                </div>
+
+                <!-- 核心大输入框组件 -->
+                <div class="bg-white p-2.5 rounded-[22px] shadow-md border border-gray-200/60 flex items-center gap-2">
+                    <div class="pl-3 text-gray-400 text-sm">🔗</div>
+                    <input id="input-url" type="text" value="https://www.bilibili.com/video/BV1xx411c7" placeholder="在此粘贴B站视频链接..." class="flex-1 bg-transparent px-2 py-3 text-sm text-gray-800 placeholder-gray-400 focus:outline-none">
+                    <button id="btn-generate" onclick="triggerAiGeneration()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-3 rounded-xl transition shadow-xs whitespace-nowrap">开始生成</button>
+                </div>
+
+                <!-- 价值承诺引导 -->
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div class="p-3 bg-white/60 border border-gray-100 rounded-xl space-y-1">
+                        <div class="text-base">①</div>
+                        <h4 class="text-xs font-bold text-gray-700">粘贴视频链接</h4>
+                    </div>
+                    <div class="p-3 bg-white/60 border border-gray-100 rounded-xl space-y-1">
+                        <div class="text-base">②</div>
+                        <h4 class="text-xs font-bold text-gray-700">AI提炼康奈尔</h4>
+                    </div>
+                    <div class="p-3 bg-white/60 border border-gray-100 rounded-xl space-y-1">
+                        <div class="text-base">③</div>
+                        <h4 class="text-xs font-bold text-gray-700">定时唤醒复习</h4>
+                    </div>
+                </div>
+
+                <!-- 最近快捷入口 -->
+                <div class="space-y-3 pt-4">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">最近编辑快链</h3>
+                    <div id="recent-notes-list" class="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100 overflow-hidden">
+                        <div onclick="switchMainView('editor', 'nav-notes')" class="p-3 text-sm hover:bg-gray-50 cursor-pointer flex justify-between items-center transition">
+                            <span class="text-gray-700 font-medium truncate">【何同学】我做了一个自动化智能家居系统</span>
+                            <span class="text-xs text-gray-400 shrink-0">1小时前编辑</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-settings" class="view-section max-w-3xl mx-auto py-8 space-y-5">
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">API 配置中心</h2>
+                        <p class="text-xs text-gray-500 mt-1">本地保存后立即生效，支持分别配置 Chat 与 ASR。</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="text-xs text-gray-500">Chat Base URL</label>
+                            <input id="settings-chat-base-url" type="text" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs" placeholder="https://api.xiaomimimo.com/v1">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs text-gray-500">Chat Model</label>
+                            <input id="settings-chat-model" type="text" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs" placeholder="mimo-v2-flash">
+                        </div>
+                        <div class="space-y-1 md:col-span-2">
+                            <label class="text-xs text-gray-500">Chat API Key（留空则不改）</label>
+                            <input id="settings-chat-api-key" type="password" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs" placeholder="输入后保存">
+                            <p id="settings-chat-key-tip" class="text-[11px] text-gray-400 mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+                    <div>
+                        <h3 class="text-base font-bold text-gray-900">ASR 配置</h3>
+                        <p class="text-xs text-gray-500 mt-1">用于音频下载后的语音转写。</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="text-xs text-gray-500">ASR Base URL</label>
+                            <input id="settings-asr-base-url" type="text" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs" placeholder="https://api.xiaomimimo.com/v1">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs text-gray-500">ASR Model</label>
+                            <input id="settings-asr-model" type="text" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs" placeholder="mimo-v2-omni">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs text-gray-500">ASR Language</label>
+                            <input id="settings-asr-language" type="text" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs" placeholder="zh">
+                        </div>
+                        <div class="space-y-1 md:col-span-2">
+                            <label class="text-xs text-gray-500">ASR API Key（留空则不改）</label>
+                            <input id="settings-asr-api-key" type="password" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs" placeholder="输入后保存">
+                            <p id="settings-asr-key-tip" class="text-[11px] text-gray-400 mt-1"></p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button onclick="saveAiSettings()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg">保存配置</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视图状态二：AI正在生成状态（加载动画） -->
+            <div id="view-ai-loading" class="view-section max-w-md mx-auto py-24 text-center space-y-5">
+                <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <div class="space-y-1.5">
+                    <h3 class="font-bold text-gray-900 text-base">AI 正在深度解析并提取中...</h3>
+                    <p class="text-xs text-gray-400">正在切割音轨、精炼康奈尔线索栏并编排“找茬/预检”Quiz...</p>
+                </div>
+            </div>
+
+            <!-- 视图状态三：笔记编辑/查看视图 -->
+            <div id="view-editor" class="view-section h-full min-h-[calc(100vh-96px)]">
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 h-full min-h-[calc(100vh-96px)]">
+                    <!-- 左侧：视频与简介 -->
+                    <div class="xl:col-span-5 bg-white border border-gray-200 rounded-2xl p-4 h-full flex flex-col">
+                        <div class="bili-player-shell bg-gray-900 shadow-inner border border-gray-800/60">
+                            <iframe
+                                id="editor-video-frame"
+                                class="absolute inset-0 w-full h-full"
+                                src="https://player.bilibili.com/player.html?isOutside=true&bvid=BV1ZB9EBmEAU&p=1&high_quality=1&as_wide=1&autoplay=0"
+                                title="Bilibili 视频播放器"
+                                allow="fullscreen; picture-in-picture"
+                                allowfullscreen
+                                referrerpolicy="strict-origin-when-cross-origin"
+                            ></iframe>
+                            <div class="absolute top-2 left-2 right-2 z-10 flex justify-between items-center pointer-events-none">
+                                <span id="editor-video-title-chip" class="bg-black/55 text-white px-2.5 py-1 rounded-md text-xs backdrop-blur-md font-medium truncate max-w-lg">🎥 刚刚 Claude Code 源码泄露！我扒出了 11 个隐藏秘密</span>
+                                <span class="bg-emerald-600 text-white text-[10px] px-1.5 py-0.5 rounded tracking-wide font-bold shrink-0">真实视频</span>
+                            </div>
+                        </div>
+                        <div class="space-y-2 px-1 pt-4">
+                            <p class="text-base font-bold text-gray-900">视频作者</p>
+                            <p id="editor-video-author" class="text-sm text-gray-500">何同学</p>
+                            <p class="text-base font-bold text-gray-900 pt-2">视频简介</p>
+                            <p id="editor-video-description" class="text-sm text-gray-600 leading-relaxed">通过自动化智能家居项目，拆解如何在多品牌设备中构建低延迟、本地化、可持续迭代的控制体系。</p>
+                        </div>
+                    </div>
+
+                    <!-- 右侧：康奈尔编辑区 -->
+                    <div class="xl:col-span-7 bg-white border border-gray-200 rounded-2xl p-4 flex flex-col gap-4 h-full">
+                        <div class="flex justify-end gap-2">
+                            <button id="editor-mode-btn" onclick="toggleEditorMode()" class="border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold px-3 py-1.5 rounded-lg transition">✏️ 编辑</button>
+                            <button onclick="saveAndToast()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">💾 保存</button>
+                        </div>
+                        <div id="note-format-toolbar" class="note-format-toolbar hidden">
+                            <span class="text-[11px] text-gray-500 font-semibold">笔记格式</span>
+                            <button type="button" onclick="applyNoteFormat('bold')" title="加粗当前选中文本"><strong>B</strong></button>
+                            <button type="button" onclick="applyNoteFormat('italic')" title="斜体当前选中文本"><em>I</em></button>
+                            <button type="button" onclick="applyNoteFormat('underline')" title="为当前选中文本添加下划线"><span style="text-decoration: underline;">U</span></button>
+                            <label class="text-[11px] text-gray-500">颜色</label>
+                            <input id="note-color-picker" type="color" value="#374151" onchange="applyNoteFormat('foreColor', this.value)" title="修改选中文本颜色">
+                        </div>
+
+                        <div class="cornell-layout">
+                            <div class="cornell-main-grid">
+                                <div class="cornell-pane">
+                                    <div class="cornell-pane-header">线索</div>
+                                    <div id="cue-list" class="space-y-2"></div>
+                                </div>
+                                <div class="cornell-pane">
+                                    <div class="cornell-pane-header">笔记</div>
+                                    <div id="note-items-list" class="space-y-2 text-xs"></div>
+                                </div>
+                            </div>
+                            <div class="cornell-summary-pane">
+                                <div class="cornell-pane-header">总结</div>
+                                <textarea id="summary-input" rows="4" class="w-full resize-none overflow-hidden bg-white border border-gray-200 rounded-lg p-2.5 text-xs text-gray-700 focus:outline-none focus:border-blue-500">通过树莓派建立本地网关，在断网和弱网环境下强制收拢IFTTT条件，彻底消除多厂商智能生态割裂的弊端。</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视图状态四：笔记库详细管理视图 -->
+            <div id="view-library" class="view-section max-w-5xl mx-auto space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-900">📚 我的笔记库</h2>
+                        <p class="text-xs text-gray-400 mt-0.5">待巩固置顶 > 时间降序</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input id="library-search-input" type="text" placeholder="搜索笔记标题、关联知识点..." class="bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs w-full sm:w-64 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <span class="bg-orange-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full" id="aside-badge">1</span>
+                    </div>
+                </div>
+
+                <div id="library-list" class="space-y-4">
+                    <!-- 卡片行：待巩固状态 -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 space-y-3 hover:shadow-2xs transition group">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-20 h-14 bg-gray-100 rounded border border-gray-200/60 overflow-hidden shrink-0 relative">
+                                <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240');"></div>
+                            </div>
+                            <div class="flex-1 min-w-0 space-y-1">
+                                <h4 onclick="switchMainView('editor', 'nav-notes')" class="text-base font-bold text-gray-900 truncate group-hover:text-blue-600 cursor-pointer transition">【何同学】我做了一个自动化智能家居系统</h4>
+                                <p class="text-sm text-gray-400 truncate">摘要：本地局域网网关树莓派架构...</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-gray-100 pt-2.5">
+                            <span class="text-sm text-gray-500 font-medium">📝 4个核心知识点</span>
+                            <button onclick="enterQuizMode('【何同学】我做了一个自动化智能家居系统')" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-md transition">⚪ 复习</button>
+                        </div>
+                    </div>
+
+                    <!-- 卡片行：已巩固状态 -->
+                    <div class="bg-white border border-gray-100 rounded-xl p-4 space-y-3 opacity-60">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-20 h-14 bg-gray-200 rounded overflow-hidden shrink-0"></div>
+                            <div class="flex-1 min-w-0 space-y-1">
+                                <h4 class="text-base font-bold text-gray-800 truncate">大语言模型模型上下文外推技术深度精讲</h4>
+                                <p class="text-sm text-gray-400 truncate">摘要：探讨RoPE位置编码与针尖寻海...</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+                            <span class="text-sm text-gray-400">📝 8个核心知识点</span>
+                            <span class="text-gray-500 text-xs font-medium bg-gray-100 px-2.5 py-1 rounded">已巩固 ✓</span>
+                        </div>
+                    </div>
+
+                    <!-- 卡片行：未到复习时间状态 -->
+                    <div class="bg-white border border-gray-100 rounded-xl p-4 space-y-3 opacity-80">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-20 h-14 bg-gray-200 rounded overflow-hidden shrink-0"></div>
+                            <div class="flex-1 min-w-0 space-y-1">
+                                <h4 class="text-base font-bold text-gray-800 truncate">30分钟搞懂Rust所有权与生命周期</h4>
+                                <p class="text-sm text-gray-400 truncate">摘要：Move语义、Borrow借用检查器...</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+                            <span class="text-sm text-gray-400">📝 6个核心知识点</span>
+                            <button onclick="enterQuizMode('Rust所有权与生命周期')" class="border border-gray-200 text-gray-500 hover:bg-gray-50 text-xs font-medium px-2.5 py-1 rounded transition">第3天可复习</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视图状态五：Quiz 复习任务大厅 -->
+            <div id="view-quiz" class="view-section max-w-4xl mx-auto space-y-5 py-2">
+                <!-- 激励总览卡 -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <p class="text-xs text-gray-400">复习任务中心</p>
+                            <h2 class="text-lg font-bold text-gray-900">你已连续打卡 <span id="streak-days" class="text-blue-600">7</span> 天</h2>
+                        </div>
+                        <button onclick="startTodayReview()" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">开始今日复习</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="bg-blue-50/70 border border-blue-100 rounded-xl p-3">
+                            <p class="text-[11px] text-gray-500">待复习视频</p>
+                            <p class="text-xl font-bold text-gray-900"><span id="pending-count">3</span> 个</p>
+                        </div>
+                        <div class="bg-amber-50/70 border border-amber-100 rounded-xl p-3">
+                            <p class="text-[11px] text-gray-500">待复习题目</p>
+                            <p class="text-xl font-bold text-gray-900"><span id="pending-quiz-count">10</span> 题</p>
+                        </div>
+                        <div class="bg-emerald-50/70 border border-emerald-100 rounded-xl p-3">
+                            <p class="text-[11px] text-gray-500">预计耗时</p>
+                            <p class="text-xl font-bold text-gray-900">9 分钟</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 今日待复习列表 -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-gray-800">今日待复习视频</h3>
+                        <span class="text-xs text-gray-400">按紧急程度排序</span>
+                    </div>
+
+                    <div id="due-quiz-list" class="space-y-3">
+                        <div class="border border-rose-100 bg-rose-50/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="w-20 h-12 rounded-lg border border-gray-200 overflow-hidden shrink-0 bg-gray-100">
+                                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=240" alt="视频封面" class="w-full h-full object-cover">
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs text-rose-500 font-semibold">逾期 1 天</p>
+                                    <p class="text-sm font-bold text-gray-900 truncate">【何同学】我做了一个自动化智能家居系统</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">待复习 4 题 · 预计 3 分钟</p>
+                                </div>
+                            </div>
+                            <button onclick="enterQuizMode('【何同学】我做了一个自动化智能家居系统')" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition self-start sm:self-auto">开始复习</button>
+                        </div>
+
+                        <div class="border border-amber-100 bg-amber-50/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="w-20 h-12 rounded-lg border border-gray-200 overflow-hidden shrink-0 bg-gray-100">
+                                    <img src="https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=240" alt="视频封面" class="w-full h-full object-cover">
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs text-amber-600 font-semibold">今天到期</p>
+                                    <p class="text-sm font-bold text-gray-900 truncate">30分钟搞懂Rust所有权与生命周期</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">待复习 3 题 · 预计 2 分钟</p>
+                                </div>
+                            </div>
+                            <button onclick="enterQuizMode('30分钟搞懂Rust所有权与生命周期')" class="bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition self-start sm:self-auto">开始复习</button>
+                        </div>
+
+                        <div class="border border-blue-100 bg-blue-50/40 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div class="flex items-start gap-3 min-w-0">
+                                <div class="w-20 h-12 rounded-lg border border-gray-200 overflow-hidden shrink-0 bg-gray-100">
+                                    <img src="https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=240" alt="视频封面" class="w-full h-full object-cover">
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs text-blue-600 font-semibold">明天到期</p>
+                                    <p class="text-sm font-bold text-gray-900 truncate">大语言模型模型上下文外推技术深度精讲</p>
+                                    <p class="text-xs text-gray-500 mt-0.5">待复习 3 题 · 预计 4 分钟</p>
+                                </div>
+                            </div>
+                            <button onclick="enterQuizMode('大语言模型模型上下文外推技术深度精讲')" class="border border-blue-200 text-blue-700 hover:bg-blue-100 text-xs font-semibold px-3 py-1.5 rounded-lg transition self-start sm:self-auto">开始复习</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视图状态六：Quiz 实操预检智能视图（单视频） -->
+            <div id="view-quiz-session" class="view-section max-w-2xl mx-auto space-y-5 py-2">
+                <!-- 顶部降压式进度条 -->
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-gray-400 truncate max-w-xs">正在进行巩固：<strong id="quiz-title-node" class="text-gray-700">视频标题</strong></span>
+                        <span id="quiz-progress-count" class="font-mono text-gray-500 font-semibold">要点 1 / 4</span>
+                    </div>
+                    <div class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                        <div id="quiz-progress-bar" class="bg-orange-500 h-full transition-all" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- 答题主卡片 -->
+                <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs space-y-5">
+                    <div class="space-y-1">
+                        <span id="quiz-question-type" class="inline-block bg-orange-50 text-orange-700 border border-orange-100 text-[10px] font-bold px-1.5 py-0.5 rounded">⚡ 实操纠错找茬题</span>
+                        <h2 id="quiz-question-stem" class="text-base font-bold text-gray-900 leading-snug">题目加载中...</h2>
+                    </div>
+
+                    <!-- 选项集合 -->
+                    <div id="quiz-options-list" class="space-y-2"></div>
+
+                    <!-- 安全兜底网机制 -->
+                    <div class="text-center">
+                        <button id="btn-quiz-dontknow" onclick="triggerSafetyNet()" class="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-4 transition">我想不起来了，点此免惩罚看提示</button>
+                    </div>
+
+                    <!-- 即时反馈浮层 -->
+                    <div id="quiz-result-layer" class="hidden border-t border-gray-100 pt-4 space-y-3">
+                        <div id="layer-status-text" class="text-xs font-bold"></div>
+                        
+                        <!-- 倒查回溯原文 -->
+                        <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-3.5 space-y-2">
+                            <div class="text-[10px] font-bold text-blue-800 tracking-wider">📌 追溯当时留下的康奈尔记录：</div>
+                            <p id="quiz-explanation-text" class="text-xs text-gray-600 leading-relaxed"></p>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button id="quiz-next-action-btn" onclick="proceedQuizAfterReview()" class="bg-gray-900 hover:bg-black text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-2xs">下一题</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视图状态七：无压力完成闭环页 -->
+            <div id="view-quiz-success" class="view-section max-w-sm mx-auto text-center py-16 space-y-5">
+                <div class="w-14 h-14 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-full flex items-center justify-center mx-auto text-2xl shadow-2xs">✓</div>
+                <div class="space-y-1">
+                    <h2 class="text-lg font-bold text-gray-900">巩固达成，已顺利归档</h2>
+                    <p class="text-xs text-gray-400 px-4">今天你已成功防御了该视频核心要点的遗忘曲线，无产生任何错题惩罚或计分包袱。</p>
+                </div>
+                <div class="pt-2 flex flex-col gap-2">
+                    <button onclick="switchMainView('workbench', 'nav-workbench')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-xs">返回首页工作台</button>
+                    <button onclick="switchMainView('quiz', 'nav-quiz')" class="text-xs text-gray-400 hover:text-gray-600 transition">返回复习任务大厅</button>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- 5. 全局基础交互 JavaScript -->
+    <script>
+        const appState = {
+            currentNoteId: null,
+            currentNote: null,
+            activeNoteContentNode: null,
+            isEditorMode: false,
+            isGenerating: false,
+            jobProgressTimer: null,
+            processCenterOpen: false,
+            processCenterMinimized: false,
+            currentTaskStartedAt: null,
+            taskHistory: [],
+            playlistInspect: null,
+            playlistVisibleParts: [],
+            playlistSelectionResolver: null,
+            activeSessionId: null,
+            activeSessionNoteId: null,
+            activeQuestion: null,
+            activeSessionTotal: 0,
+            activeSessionIndex: 0,
+            hasAnsweredCurrent: false,
+            pendingNextQuestion: null,
+            pendingSessionFinished: false
+        };
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+
+        async function apiRequest(path, options = {}) {
+            const response = await fetch(path, {
+                headers: { "Content-Type": "application/json" },
+                ...options
+            });
+
+            let payload = {};
+            try {
+                payload = await response.json();
+            } catch (_error) {
+                payload = {};
+            }
+
+            if (!response.ok) {
+                throw new Error(payload.detail || "请求失败，请稍后重试");
+            }
+            return payload;
+        }
+
+        // 核心单页视图流切换器
+        function switchMainView(viewId, navId) {
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+            const targetView = document.getElementById(`view-${viewId}`);
+            if (targetView) targetView.classList.add('active');
+
+            const navWorkbench = document.getElementById('nav-workbench');
+            const navNotes = document.getElementById('nav-notes');
+            const navQuiz = document.getElementById('nav-quiz');
+            const navSettings = document.getElementById('nav-settings');
+            const notesEditorBtn = document.getElementById('nav-notes-editor');
+            const notesLibraryBtn = document.getElementById('nav-notes-library');
+            const notesChildren = document.getElementById('notes-nav-children');
+            const notesChevron = document.getElementById('nav-notes-chevron');
+            const isNotesView = viewId === 'editor' || viewId === 'library';
+
+            if (navWorkbench) navWorkbench.className = "w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900";
+            if (navNotes) navNotes.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900";
+            if (navQuiz) navQuiz.className = "w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900";
+            if (navSettings) navSettings.className = "w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900";
+            if (notesEditorBtn) notesEditorBtn.className = "w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900";
+            if (notesLibraryBtn) notesLibraryBtn.className = "w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition text-gray-600 hover:bg-gray-50 hover:text-gray-900";
+
+            const activeNav = document.getElementById(navId);
+            if (activeNav && navId !== 'nav-notes') {
+                activeNav.className = "w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition bg-blue-50 text-blue-700";
+            }
+
+            if (isNotesView) {
+                if (navNotes) navNotes.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition bg-blue-50 text-blue-700";
+                if (notesChildren) notesChildren.classList.remove('hidden');
+                if (notesChevron) notesChevron.classList.add('rotate-180');
+                if (viewId === 'editor' && notesEditorBtn) notesEditorBtn.className = "w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-50 text-blue-700";
+                if (viewId === 'library' && notesLibraryBtn) notesLibraryBtn.className = "w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition bg-blue-50 text-blue-700";
+            } else {
+                if (notesChildren) notesChildren.classList.add('hidden');
+                if (notesChevron) notesChevron.classList.remove('rotate-180');
+            }
+
+            if (viewId === "workbench") loadRecentNotes();
+            if (viewId === "editor") loadLatestEditorNote();
+            if (viewId === "library") loadLibrary();
+            if (viewId === "quiz") loadQuizDue();
+            if (viewId === "settings") loadAiSettings();
+        }
+
+        function toggleNotesMenu() {
+            const notesChildren = document.getElementById('notes-nav-children');
+            const notesChevron = document.getElementById('nav-notes-chevron');
+            if (!notesChildren) return;
+
+            const shouldOpen = notesChildren.classList.contains('hidden');
+            notesChildren.classList.toggle('hidden', !shouldOpen);
+            if (notesChevron) notesChevron.classList.toggle('rotate-180', shouldOpen);
+
+            if (shouldOpen) switchMainView('editor', 'nav-notes');
+        }
+
+        function updateEditorNote(note) {
+            appState.currentNoteId = note.id;
+            appState.currentNote = note;
+
+            const titleChip = document.getElementById("editor-video-title-chip");
+            const author = document.getElementById("editor-video-author");
+            const desc = document.getElementById("editor-video-description");
+            const summaryInput = document.getElementById("summary-input");
+            const frame = document.getElementById("editor-video-frame");
+
+            titleChip.textContent = `🎥 ${note.video_title}`;
+            author.textContent = note.author;
+            desc.textContent = note.description;
+            summaryInput.value = note.summary;
+            autoResizeTextarea(summaryInput);
+            summaryInput.oninput = () => autoResizeTextarea(summaryInput);
+            if (frame) {
+                frame.src = buildBilibiliEmbedUrl(note);
+            }
+            renderEditorCollections(note);
+            applyEditorModeState();
+        }
+
+        function renderEditorCollections(note) {
+            const cueList = document.getElementById("cue-list");
+            const noteList = document.getElementById("note-items-list");
+            if (!cueList || !noteList) return;
+
+            const cues = (note.cues || []).filter(Boolean);
+            const items = (note.note_items || []).filter((x) => x && typeof x === "object");
+            const normalizedCues = cues.length ? cues : ["这个知识点的核心问题是什么？"];
+            const normalizedItems = items.length ? items : [{ timestamp: "00:00", content_html: "内容解析缺失，请重新生成。" }];
+
+            cueList.innerHTML = normalizedCues.map((cue, idx) => `
+                <textarea
+                    data-cue-index="${idx}"
+                    rows="1"
+                    class="w-full resize-none overflow-hidden bg-white border border-gray-200 rounded-lg p-2 text-xs font-semibold focus:outline-none focus:border-blue-500"
+                >${escapeHtml(cue)}</textarea>
+            `).join("");
+
+            noteList.innerHTML = normalizedItems.map((item, idx) => `
+                <div class="p-2.5 bg-gray-50/60 rounded-lg border border-transparent hover:border-gray-200 transition group flex items-start">
+                    <button data-note-time="${idx}" class="bg-blue-50 text-blue-600 font-mono font-bold px-1.5 py-0.5 rounded mr-2 shrink-0 hover:bg-blue-100">⏱️ ${escapeHtml(item.timestamp || "00:00")}</button>
+                    <span data-note-content="${idx}" class="rich-note-content" contenteditable="${appState.isEditorMode ? "true" : "false"}">${item.content_html || ""}</span>
+                </div>
+            `).join("");
+
+            noteList.querySelectorAll("[data-note-time]").forEach((btn, idx) => {
+                btn.onclick = () => {
+                    const raw = btn.textContent.replace("⏱️", "").trim() || "00:00";
+                    const percent = Math.min(95, 15 + idx * 10);
+                    simulateSeek(raw, percent);
+                };
+            });
+
+            cueList.querySelectorAll("textarea[data-cue-index]").forEach((node) => {
+                autoResizeTextarea(node);
+                node.addEventListener("input", () => autoResizeTextarea(node));
+            });
+
+            noteList.querySelectorAll("[data-note-content]").forEach((node) => {
+                node.addEventListener("focus", () => {
+                    appState.activeNoteContentNode = node;
+                });
+                node.addEventListener("mouseup", () => {
+                    appState.activeNoteContentNode = node;
+                });
+                node.addEventListener("keyup", () => {
+                    appState.activeNoteContentNode = node;
+                });
+            });
+            applyEditorModeState();
+        }
+
+        function autoResizeTextarea(el) {
+            if (!el) return;
+            el.style.height = "0px";
+            el.style.height = `${Math.max(el.scrollHeight, 36)}px`;
+        }
+
+        function applyNoteFormat(command, value = null) {
+            if (!appState.isEditorMode) {
+                triggerToast("⚠️ 请先点击“编辑”进入编辑模式");
+                return;
+            }
+            const active = appState.activeNoteContentNode;
+            if (!active) {
+                triggerToast("⚠️ 请先在笔记区域选中要编辑的文字");
+                return;
+            }
+            active.focus();
+            try {
+                document.execCommand("styleWithCSS", false, true);
+                if (value !== null) {
+                    document.execCommand(command, false, value);
+                } else {
+                    document.execCommand(command, false, null);
+                }
+            } catch (_error) {
+                triggerToast("⚠️ 当前浏览器不支持该格式命令");
+            }
+        }
+
+        function applyEditorModeState() {
+            const toolbar = document.getElementById("note-format-toolbar");
+            const editorBtn = document.getElementById("editor-mode-btn");
+            const summaryInput = document.getElementById("summary-input");
+            const cueInputs = document.querySelectorAll("#cue-list [data-cue-index]");
+            const noteContents = document.querySelectorAll("#note-items-list [data-note-content]");
+            if (toolbar) toolbar.classList.toggle("hidden", !appState.isEditorMode);
+            if (editorBtn) {
+                if (appState.isEditorMode) {
+                    editorBtn.textContent = "✅ 完成";
+                    editorBtn.className = "border border-blue-200 text-blue-700 bg-blue-50 text-xs font-semibold px-3 py-1.5 rounded-lg transition";
+                } else {
+                    editorBtn.textContent = "✏️ 编辑";
+                    editorBtn.className = "border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold px-3 py-1.5 rounded-lg transition";
+                }
+            }
+            cueInputs.forEach((el) => {
+                el.readOnly = !appState.isEditorMode;
+            });
+            noteContents.forEach((el) => {
+                el.setAttribute("contenteditable", appState.isEditorMode ? "true" : "false");
+            });
+            if (summaryInput) {
+                summaryInput.readOnly = !appState.isEditorMode;
+                summaryInput.classList.toggle("opacity-80", !appState.isEditorMode);
+            }
+        }
+
+        function toggleEditorMode() {
+            appState.isEditorMode = !appState.isEditorMode;
+            applyEditorModeState();
+            if (!appState.isEditorMode) {
+                appState.activeNoteContentNode = null;
+            }
+        }
+
+        function buildBilibiliEmbedUrl(note) {
+            const rawBvid = note?.video_id || "";
+            const bvid = rawBvid.startsWith("BV") ? rawBvid : extractBvidFromUrl(note?.source_url || "");
+            const page = extractBilibiliPageFromUrl(note?.source_url || "");
+            if (!bvid) return "about:blank";
+            return `https://player.bilibili.com/player.html?isOutside=true&bvid=${encodeURIComponent(bvid)}&p=${page}&high_quality=1&as_wide=1&autoplay=0`;
+        }
+
+        function extractBvidFromUrl(url) {
+            const matched = String(url || "").match(/\/video\/(BV[0-9A-Za-z]{10})/);
+            return matched ? matched[1] : "";
+        }
+
+        function extractBilibiliPageFromUrl(url) {
+            try {
+                const parsed = new URL(String(url || ""));
+                const raw = Number(parsed.searchParams.get("p") || "1");
+                if (!Number.isFinite(raw) || raw < 1) return 1;
+                return Math.floor(raw);
+            } catch (_error) {
+                return 1;
+            }
+        }
+
+        async function loadEditorNote(noteId) {
+            const payload = await apiRequest(`/api/notes/${noteId}`);
+            updateEditorNote(payload.note);
+        }
+
+        async function loadLatestEditorNote() {
+            try {
+                if (appState.currentNoteId) {
+                    await loadEditorNote(appState.currentNoteId);
+                    return;
+                }
+                const payload = await apiRequest("/api/notes/latest");
+                updateEditorNote(payload.note);
+            } catch (error) {
+                triggerToast("🗒️ 还没有可编辑笔记，请先去工作台生成");
+                switchMainView("workbench", "nav-workbench");
+            }
+        }
+
+        function buildStatusButton(note) {
+            if (note.status === "completed") {
+                return '<span class="text-gray-500 text-xs font-medium bg-gray-100 px-2.5 py-1 rounded">已巩固 ✓</span>';
+            }
+            if (note.status === "upcoming") {
+                return '<span class="border border-gray-200 text-gray-500 text-xs font-medium px-2.5 py-1 rounded transition">未到复习时间</span>';
+            }
+            return `<button onclick="enterQuizMode('${escapeHtml(note.id)}', '${escapeHtml(note.video_title)}')" class="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-md transition">⚪ 复习</button>`;
+        }
+
+        function openNoteEditor(noteId) {
+            appState.currentNoteId = noteId;
+            switchMainView("editor", "nav-notes");
+        }
+
+        window.openNoteEditor = openNoteEditor;
+
+        async function loadRecentNotes() {
+            try {
+                const payload = await apiRequest("/api/workbench/recent?limit=3");
+                const container = document.getElementById("recent-notes-list");
+                const items = payload.items || [];
+                if (!items.length) {
+                    container.innerHTML = `
+                        <div class="p-4 text-sm text-gray-400 text-center">
+                            暂无最近编辑，先去生成第一条笔记
+                        </div>
+                    `;
+                    return;
+                }
+                container.innerHTML = items.map((item, index) => `
+                    <div onclick="openNoteEditor('${item.id}')" class="p-3 text-sm hover:bg-gray-50 cursor-pointer flex justify-between items-center transition ${index > 0 ? "border-t border-gray-100" : ""}">
+                        <span class="text-gray-700 font-medium truncate">${escapeHtml(item.video_title)}</span>
+                        <span class="text-xs text-gray-400 shrink-0">最近编辑</span>
+                    </div>
+                `).join("");
+            } catch (_error) {
+                triggerToast("⚠️ 最近笔记加载失败");
+            }
+        }
+
+        function updateGlobalCounters(meta, notes) {
+            const pendingCountNode = document.getElementById("pending-count");
+            const pendingQuizNode = document.getElementById("pending-quiz-count");
+            const streakNode = document.getElementById("streak-days");
+            const badgeNode = document.getElementById("aside-badge");
+
+            if (pendingCountNode) {
+                const pendingNotes = notes.filter(n => n.status !== "completed").length;
+                pendingCountNode.innerText = String(pendingNotes);
+            }
+            if (pendingQuizNode) {
+                const pendingQuiz = notes
+                    .filter(n => n.status !== "completed")
+                    .reduce((acc, n) => acc + Number(n.pending_quiz_count || 0), 0);
+                pendingQuizNode.innerText = String(pendingQuiz);
+            }
+            if (streakNode && meta?.streak_days) streakNode.innerText = String(meta.streak_days);
+            if (badgeNode) badgeNode.innerText = String(meta?.pending_badge_count ?? 0);
+        }
+
+        async function loadLibrary() {
+            const search = document.getElementById("library-search-input").value.trim();
+            try {
+                const payload = await apiRequest(`/api/notes?search=${encodeURIComponent(search)}&status=all`);
+                const items = payload.items || [];
+                const list = document.getElementById("library-list");
+                updateGlobalCounters(payload.meta || {}, items);
+
+                if (!items.length) {
+                    list.innerHTML = `
+                        <div class="bg-white border border-gray-200 rounded-xl p-6 text-center">
+                            <p class="text-sm text-gray-500">当前没有笔记，去工作台粘贴链接开始生成吧。</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                list.innerHTML = items.map((note) => `
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 space-y-3 hover:shadow-2xs transition group ${note.status === "completed" ? "opacity-60" : ""}">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-20 h-14 bg-gray-100 rounded border border-gray-200/60 overflow-hidden shrink-0 relative">
+                                <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('${escapeHtml(note.cover_url || "")}');"></div>
+                            </div>
+                            <div class="flex-1 min-w-0 space-y-1">
+                                <h4 onclick="openNoteEditor('${note.id}')" class="text-base font-bold text-gray-900 truncate group-hover:text-blue-600 cursor-pointer transition">${escapeHtml(note.video_title)}</h4>
+                                <p class="text-sm text-gray-400 truncate">摘要：${escapeHtml(note.summary)}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between border-t border-gray-100 pt-2.5">
+                            <span class="text-sm text-gray-500 font-medium">📝 ${Number(note.knowledge_points_count || 0)}个核心知识点</span>
+                            ${buildStatusButton(note)}
+                        </div>
+                    </div>
+                `).join("");
+            } catch (_error) {
+                triggerToast("⚠️ 笔记库加载失败，请稍后重试");
+            }
+        }
+
+        async function loadAiSettings() {
+            try {
+                const payload = await apiRequest("/api/settings/ai");
+                const chat = payload.chat || {};
+                const asr = payload.asr || {};
+                document.getElementById("settings-chat-base-url").value = chat.base_url || "";
+                document.getElementById("settings-chat-model").value = chat.model || "";
+                document.getElementById("settings-asr-base-url").value = asr.base_url || "";
+                document.getElementById("settings-asr-model").value = asr.model || "";
+                document.getElementById("settings-asr-language").value = asr.language || "";
+                document.getElementById("settings-chat-api-key").value = "";
+                document.getElementById("settings-asr-api-key").value = "";
+                document.getElementById("settings-chat-key-tip").textContent = chat.has_api_key ? `已保存 Key：${chat.api_key_masked}` : "当前未保存 Chat Key";
+                document.getElementById("settings-asr-key-tip").textContent = asr.has_api_key ? `已保存 Key：${asr.api_key_masked}` : "当前未保存 ASR Key";
+            } catch (_error) {
+                triggerToast("⚠️ 配置加载失败");
+            }
+        }
+
+        async function saveAiSettings() {
+            const payload = {
+                chat_base_url: document.getElementById("settings-chat-base-url").value.trim(),
+                chat_model: document.getElementById("settings-chat-model").value.trim(),
+                asr_base_url: document.getElementById("settings-asr-base-url").value.trim(),
+                asr_model: document.getElementById("settings-asr-model").value.trim(),
+                asr_language: document.getElementById("settings-asr-language").value.trim()
+            };
+            const chatKey = document.getElementById("settings-chat-api-key").value.trim();
+            const asrKey = document.getElementById("settings-asr-api-key").value.trim();
+            if (chatKey) payload.chat_api_key = chatKey;
+            if (asrKey) payload.asr_api_key = asrKey;
+            try {
+                await apiRequest("/api/settings/ai", {
+                    method: "PUT",
+                    body: JSON.stringify(payload)
+                });
+                triggerToast("✅ AI 配置已保存并生效");
+                await loadAiSettings();
+            } catch (error) {
+                triggerToast(`⚠️ ${error.message}`);
+            }
+        }
+
+        async function loadAiSettings() {
+            try {
+                const payload = await apiRequest("/api/settings/ai");
+                const chat = payload.chat || {};
+                const asr = payload.asr || {};
+                document.getElementById("settings-chat-base-url").value = chat.base_url || "";
+                document.getElementById("settings-chat-model").value = chat.model || "";
+                document.getElementById("settings-asr-base-url").value = asr.base_url || "";
+                document.getElementById("settings-asr-model").value = asr.model || "";
+                document.getElementById("settings-asr-language").value = asr.language || "";
+                document.getElementById("settings-chat-api-key").value = "";
+                document.getElementById("settings-asr-api-key").value = "";
+                document.getElementById("settings-chat-key-tip").textContent = chat.has_api_key ? `已保存 Key：${chat.api_key_masked}` : "当前未保存 Chat Key";
+                document.getElementById("settings-asr-key-tip").textContent = asr.has_api_key ? `已保存 Key：${asr.api_key_masked}` : "当前未保存 ASR Key";
+            } catch (_error) {
+                triggerToast("⚠️ 配置加载失败");
+            }
+        }
+
+        async function saveAiSettings() {
+            const payload = {
+                chat_base_url: document.getElementById("settings-chat-base-url").value.trim(),
+                chat_model: document.getElementById("settings-chat-model").value.trim(),
+                asr_base_url: document.getElementById("settings-asr-base-url").value.trim(),
+                asr_model: document.getElementById("settings-asr-model").value.trim(),
+                asr_language: document.getElementById("settings-asr-language").value.trim()
+            };
+            const chatKey = document.getElementById("settings-chat-api-key").value.trim();
+            const asrKey = document.getElementById("settings-asr-api-key").value.trim();
+            if (chatKey) payload.chat_api_key = chatKey;
+            if (asrKey) payload.asr_api_key = asrKey;
+            try {
+                await apiRequest("/api/settings/ai", {
+                    method: "PUT",
+                    body: JSON.stringify(payload)
+                });
+                triggerToast("✅ AI 配置已保存并生效");
+                await loadAiSettings();
+            } catch (error) {
+                triggerToast(`⚠️ ${error.message}`);
+            }
+        }
+
+        function dueStatusLabel(status) {
+            if (status === "overdue") return "逾期复习";
+            if (status === "due") return "今天到期";
+            return "未到复习时间";
+        }
+
+        function renderDueQuizList(items) {
+            const root = document.getElementById("due-quiz-list");
+            if (!root) return;
+            if (!items?.length) {
+                root.innerHTML = `<div class="text-xs text-gray-400 py-6 text-center border border-dashed border-gray-200 rounded-xl">暂无可复习任务</div>`;
+                return;
+            }
+            root.innerHTML = items.map((item) => {
+                const status = String(item.status || "upcoming");
+                const badgeClass = status === "overdue"
+                    ? "text-xs text-rose-500 font-semibold"
+                    : status === "due"
+                        ? "text-xs text-amber-600 font-semibold"
+                        : "text-xs text-blue-600 font-semibold";
+                const action = status === "upcoming"
+                    ? `<span class="border border-gray-200 text-gray-500 text-xs font-medium px-2.5 py-1 rounded transition">未到复习时间</span>`
+                    : `<button onclick="enterQuizMode('${item.note_id}', '${escapeHtml(item.video_title)}')" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition self-start sm:self-auto">开始复习</button>`;
+                return `
+                    <div class="border border-gray-200 bg-white rounded-xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <div class="min-w-0">
+                                <p class="${badgeClass}">${dueStatusLabel(status)}</p>
+                                <p class="text-sm font-bold text-gray-900 truncate">${escapeHtml(item.video_title || "未命名笔记")}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">待复习 ${Number(item.pending_quiz_count || 0)} 题</p>
+                            </div>
+                        </div>
+                        ${action}
+                    </div>
+                `;
+            }).join("");
+        }
+
+        async function loadQuizDue() {
+            try {
+                const payload = await apiRequest("/api/quiz/due");
+                const items = payload.items || [];
+                renderDueQuizList(items);
+                const pendingCount = items.filter((x) => String(x.status) !== "upcoming").length;
+                const pendingQuiz = (payload.meta?.total_pending_quizzes ?? items.reduce((acc, x) => acc + Number(x.pending_quiz_count || 0), 0));
+                const rounds = payload.meta?.today_rounds ?? Math.max(1, Math.ceil(pendingQuiz / 4));
+                const pendingNode = document.getElementById("pending-count");
+                const pendingQuizNode = document.getElementById("pending-quiz-count");
+                if (pendingNode) pendingNode.innerText = String(pendingCount);
+                if (pendingQuizNode) pendingQuizNode.innerText = String(pendingQuiz);
+                const etaNode = document.querySelector("#view-quiz .bg-emerald-50\\/70 p.text-xl");
+                if (etaNode) etaNode.innerText = `${Math.max(1, rounds * 2)} 分钟`;
+            } catch (_error) {
+                triggerToast("⚠️ 复习任务加载失败");
+            }
+        }
+
+        // 状态二变换交互：真实触发后端生成流程
+        async function triggerAiGeneration() {
+            const urlVal = document.getElementById('input-url').value;
+            if (!urlVal.trim()) {
+                triggerToast("⚠️ 请先粘贴合规的B站视频长链接");
+                return;
+            }
+            if (appState.isGenerating) {
+                triggerToast("⏳ 当前已有后台任务在执行，请稍候完成。");
+                return;
+            }
+
+            await animateTaskToProcessCenter();
+            appState.currentTaskStartedAt = Date.now();
+            startBackgroundJobProgress();
+            appState.isGenerating = true;
+            setGenerateButtonState(true);
+            toggleProcessCenter(true);
+
+            try {
+                const inspect = await apiRequest("/api/workbench/playlist/inspect", {
+                    method: "POST",
+                    body: JSON.stringify({ url: urlVal.trim() })
+                });
+                appState.playlistInspect = inspect;
+                let payload;
+                if (inspect?.is_playlist) {
+                    const selectedPartIds = await pickPlaylistParts(inspect);
+                    if (!selectedPartIds?.length) {
+                        throw new Error("已取消合集生成");
+                    }
+                    payload = await apiRequest("/api/workbench/generate-playlist", {
+                        method: "POST",
+                        body: JSON.stringify({
+                            url: urlVal.trim(),
+                            selected_part_ids: selectedPartIds,
+                            strict_mode: false
+                        })
+                    });
+                } else {
+                    payload = await apiRequest("/api/workbench/generate", {
+                        method: "POST",
+                        body: JSON.stringify({ url: urlVal.trim() })
+                    });
+                }
+                finishBackgroundJobProgress(true, "✅ 已生成完成，正在刷新笔记视图...");
+                updateEditorNote(payload.note);
+                await loadRecentNotes();
+                await loadLibrary();
+                await loadQuizDue();
+                switchMainView('editor', 'nav-notes');
+                triggerToast("✨ AI 成功提取康奈尔骨架！已为您生成多态卡片。");
+            } catch (error) {
+                finishBackgroundJobProgress(false, `❌ ${error.message}`);
+                switchMainView('workbench', 'nav-workbench');
+                triggerToast(`⚠️ ${error.message}`);
+            } finally {
+                appState.isGenerating = false;
+                setGenerateButtonState(false);
+                refreshProcessCenterBadge();
+            }
+        }
+
+        function playlistSelectedIds() {
+            return Array.from(document.querySelectorAll("#playlist-parts-list input[type='checkbox']:checked")).map((n) => n.value);
+        }
+
+        function renderPlaylistSelectorMeta(inspect) {
+            const meta = document.getElementById("playlist-selector-meta");
+            if (!meta) return;
+            const total = inspect?.parts?.length || 0;
+            meta.textContent = `《${inspect?.playlist_title || "合集"}》共 ${total} 个分P，请选择要合并生成的部分`;
+        }
+
+        function renderPlaylistPartsList(parts, keyword = "") {
+            const list = document.getElementById("playlist-parts-list");
+            if (!list) return;
+            const lower = keyword.trim().toLowerCase();
+            const visible = (parts || []).filter((part) => {
+                if (!lower) return true;
+                return String(part.title || "").toLowerCase().includes(lower);
+            });
+            appState.playlistVisibleParts = visible;
+            if (!visible.length) {
+                list.innerHTML = `<p class="text-xs text-gray-400 p-2">没有匹配的分P</p>`;
+                return;
+            }
+            list.innerHTML = visible.map((part) => `
+                <label class="flex items-start gap-2 p-2 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" value="${escapeHtml(part.part_id)}" checked class="mt-0.5">
+                    <div class="min-w-0">
+                        <p class="text-xs font-semibold text-gray-800 truncate">P${Number(part.p_index || 0)} · ${escapeHtml(part.title || "未命名分P")}</p>
+                        <p class="text-[11px] text-gray-500">${Math.round(Number(part.duration || 0) / 60)} 分钟</p>
+                    </div>
+                </label>
+            `).join("");
+        }
+
+        function togglePlaylistSelection(flag) {
+            document.querySelectorAll("#playlist-parts-list input[type='checkbox']").forEach((node) => {
+                node.checked = !!flag;
+            });
+        }
+
+        function closePlaylistSelector() {
+            const modal = document.getElementById("playlist-selector-modal");
+            if (modal) modal.classList.add("hidden");
+            const resolver = appState.playlistSelectionResolver;
+            if (resolver) resolver(null);
+            appState.playlistSelectionResolver = null;
+        }
+
+        function confirmPlaylistSelection() {
+            const picked = playlistSelectedIds();
+            if (!picked.length) {
+                triggerToast("⚠️ 请至少选择一个分P");
+                return;
+            }
+            const modal = document.getElementById("playlist-selector-modal");
+            if (modal) modal.classList.add("hidden");
+            const resolver = appState.playlistSelectionResolver;
+            if (resolver) resolver(picked);
+            appState.playlistSelectionResolver = null;
+        }
+
+        async function pickPlaylistParts(inspect) {
+            const modal = document.getElementById("playlist-selector-modal");
+            const search = document.getElementById("playlist-part-search");
+            if (!modal || !search) return null;
+            renderPlaylistSelectorMeta(inspect);
+            renderPlaylistPartsList(inspect?.parts || []);
+            search.value = "";
+            search.oninput = () => renderPlaylistPartsList(inspect?.parts || [], search.value);
+            modal.classList.remove("hidden");
+            return new Promise((resolve) => {
+                appState.playlistSelectionResolver = resolve;
+            });
+        }
+
+        function setGenerateButtonState(isLoading) {
+            const btn = document.getElementById("btn-generate");
+            if (!btn) return;
+            btn.disabled = isLoading;
+            btn.classList.toggle("opacity-70", isLoading);
+            btn.classList.toggle("cursor-not-allowed", isLoading);
+            btn.textContent = isLoading ? "后台生成中..." : "开始生成";
+        }
+
+        function setJobProgress(progress, message) {
+            const fill = document.getElementById("job-progress-fill");
+            const pct = document.getElementById("job-percent-text");
+            const status = document.getElementById("job-status-text");
+            if (!fill || !pct || !status) return;
+
+            const clamped = Math.max(0, Math.min(100, progress));
+            fill.style.width = `${clamped}%`;
+            pct.textContent = `${Math.round(clamped)}%`;
+            if (message) status.textContent = message;
+            if (appState.processCenterMinimized) applyProcessCenterMinimizedState();
+            refreshProcessCenterBadge();
+        }
+
+        function startBackgroundJobProgress() {
+            if (appState.jobProgressTimer) window.clearInterval(appState.jobProgressTimer);
+            const startedAt = Date.now();
+            setJobProgress(6, "正在下载音频并准备转写...");
+            appState.jobProgressTimer = window.setInterval(() => {
+                const elapsed = Date.now() - startedAt;
+                let progress = 10;
+                let message = "正在下载音频并准备转写...";
+                if (elapsed >= 15000) {
+                    progress = 30;
+                    message = "正在进行语音识别，请稍候...";
+                }
+                if (elapsed >= 40000) {
+                    progress = 55;
+                    message = "正在提炼关键线索与时间戳...";
+                }
+                if (elapsed >= 70000) {
+                    progress = 75;
+                    message = "正在生成康奈尔摘要与问答线索...";
+                }
+                if (elapsed >= 100000) {
+                    progress = 90;
+                    message = "即将完成，正在写入笔记库...";
+                }
+                setJobProgress(progress, message);
+            }, 600);
+        }
+
+        function finishBackgroundJobProgress(success, message) {
+            if (appState.jobProgressTimer) {
+                window.clearInterval(appState.jobProgressTimer);
+                appState.jobProgressTimer = null;
+            }
+            setJobProgress(success ? 100 : 96, message);
+            const elapsedMs = appState.currentTaskStartedAt ? Date.now() - appState.currentTaskStartedAt : 0;
+            if (elapsedMs > 0) {
+                addTaskHistory({
+                    success,
+                    message,
+                    elapsedMs,
+                    finishedAt: Date.now()
+                });
+            }
+            appState.currentTaskStartedAt = null;
+            window.setTimeout(() => refreshProcessCenterBadge(), 1200);
+        }
+
+        function toggleProcessCenter(show) {
+            const modal = document.getElementById("process-center-modal");
+            if (!modal) return;
+            appState.processCenterOpen = !!show;
+            if (show) appState.processCenterMinimized = false;
+            modal.classList.toggle("hidden", !show);
+            applyProcessCenterMinimizedState();
+            refreshProcessCenterBadge();
+        }
+
+        function refreshProcessCenterBadge() {
+            const trigger = document.getElementById("process-center-trigger");
+            const badge = document.getElementById("process-center-badge");
+            if (!trigger || !badge) return;
+            const isBusy = appState.isGenerating;
+            trigger.classList.toggle("is-busy", isBusy);
+            badge.classList.toggle("hidden", !isBusy);
+            badge.textContent = isBusy ? "1" : "0";
+        }
+
+        function toggleProcessCenterMinimized() {
+            appState.processCenterMinimized = !appState.processCenterMinimized;
+            applyProcessCenterMinimizedState();
+        }
+
+        function applyProcessCenterMinimizedState() {
+            const body = document.getElementById("process-center-body");
+            const backdrop = document.getElementById("process-center-backdrop");
+            const card = document.getElementById("process-center-card");
+            const miniStatus = document.getElementById("job-mini-status");
+            const minBtn = document.getElementById("process-center-min-btn");
+            const pct = document.getElementById("job-percent-text");
+            const status = document.getElementById("job-status-text");
+            if (!body || !backdrop || !card || !miniStatus || !minBtn || !pct || !status) return;
+
+            if (appState.processCenterMinimized) {
+                body.classList.add("hidden");
+                backdrop.classList.add("hidden");
+                card.classList.remove("w-[360px]");
+                card.classList.add("w-[260px]", "space-y-0");
+                miniStatus.classList.remove("hidden");
+                miniStatus.textContent = `${pct.textContent} · ${status.textContent}`;
+                minBtn.textContent = "□";
+                minBtn.title = "展开";
+            } else {
+                body.classList.remove("hidden");
+                backdrop.classList.remove("hidden");
+                card.classList.add("w-[360px]", "space-y-3");
+                card.classList.remove("w-[260px]", "space-y-0");
+                miniStatus.classList.add("hidden");
+                minBtn.textContent = "—";
+                minBtn.title = "最小化";
+            }
+        }
+
+        function addTaskHistory(item) {
+            appState.taskHistory.unshift(item);
+            appState.taskHistory = appState.taskHistory.slice(0, 3);
+            renderTaskHistory();
+        }
+
+        function formatElapsed(ms) {
+            const sec = Math.max(0, Math.round(ms / 1000));
+            const min = Math.floor(sec / 60);
+            const rest = sec % 60;
+            if (min > 0) return `${min}分${rest}秒`;
+            return `${rest}秒`;
+        }
+
+        function formatHistoryTime(ts) {
+            const date = new Date(ts);
+            const h = String(date.getHours()).padStart(2, "0");
+            const m = String(date.getMinutes()).padStart(2, "0");
+            return `${h}:${m}`;
+        }
+
+        function renderTaskHistory() {
+            const list = document.getElementById("process-history-list");
+            if (!list) return;
+            if (!appState.taskHistory.length) {
+                list.innerHTML = `<p class="text-gray-400">暂无任务历史</p>`;
+                return;
+            }
+            list.innerHTML = appState.taskHistory.map((item) => {
+                const statusText = item.success ? "成功" : "失败";
+                const statusColor = item.success ? "text-emerald-600" : "text-rose-600";
+                const statusIcon = item.success ? "✅" : "❌";
+                return `
+                    <div class="rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-2 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold ${statusColor}">${statusIcon} ${statusText}</span>
+                            <span class="text-gray-400">${formatHistoryTime(item.finishedAt)}</span>
+                        </div>
+                        <p class="text-gray-500 truncate">${escapeHtml(item.message || "")}</p>
+                        <p class="text-gray-400">耗时：${formatElapsed(item.elapsedMs)}</p>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        async function animateTaskToProcessCenter() {
+            const startBtn = document.getElementById("btn-generate");
+            const target = document.getElementById("process-center-trigger");
+            if (!startBtn || !target) return;
+
+            const startRect = startBtn.getBoundingClientRect();
+            const targetRect = target.getBoundingClientRect();
+            const chip = document.createElement("div");
+            chip.textContent = "后台任务";
+            chip.style.position = "fixed";
+            chip.style.left = `${startRect.left + startRect.width / 2 - 34}px`;
+            chip.style.top = `${startRect.top + startRect.height / 2 - 14}px`;
+            chip.style.padding = "4px 10px";
+            chip.style.borderRadius = "999px";
+            chip.style.background = "#5b63ff";
+            chip.style.color = "#fff";
+            chip.style.fontSize = "11px";
+            chip.style.fontWeight = "700";
+            chip.style.zIndex = "80";
+            chip.style.boxShadow = "0 10px 20px rgba(91,99,255,0.25)";
+            chip.style.transition = "all 420ms cubic-bezier(0.22, 1, 0.36, 1)";
+            document.body.appendChild(chip);
+
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+            chip.style.left = `${targetRect.left + targetRect.width / 2 - 12}px`;
+            chip.style.top = `${targetRect.top + targetRect.height / 2 - 12}px`;
+            chip.style.opacity = "0.2";
+            chip.style.transform = "scale(0.6)";
+
+            await new Promise((resolve) => window.setTimeout(resolve, 450));
+            chip.remove();
+        }
+
+        // 视频模拟定点跳转播放
+        function simulateSeek(timeStr, percent) {
+            const frame = document.getElementById("editor-video-frame");
+            if (frame && appState.currentNote) {
+                const base = buildBilibiliEmbedUrl(appState.currentNote);
+                const sec = timestampToSeconds(timeStr);
+                frame.src = `${base}&t=${sec}`;
+            }
+            triggerToast(`⏱️ 已尝试跳转到 ${timeStr}（B站内嵌播放器能力受平台限制）`);
+        }
+
+        function timestampToSeconds(raw) {
+            const cleaned = String(raw || "").trim();
+            const matched = cleaned.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+            if (!matched) return 0;
+            if (matched[3]) {
+                return Number(matched[1]) * 3600 + Number(matched[2]) * 60 + Number(matched[3]);
+            }
+            return Number(matched[1]) * 60 + Number(matched[2]);
+        }
+
+        // 触发全局 Toast 消息框
+        function triggerToast(msg) {
+            const toast = document.getElementById('toast-tip');
+            document.getElementById('toast-text').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        // 保存动作：真实落库
+        async function saveAndToast() {
+            if (!appState.currentNoteId || !appState.currentNote) {
+                triggerToast("⚠️ 当前没有可保存的笔记");
+                return;
+            }
+
+            const cues = Array.from(document.querySelectorAll("#cue-list [data-cue-index]"))
+                .map((node) => node.value.trim())
+                .filter(Boolean);
+            const noteItems = Array.from(document.querySelectorAll("#note-items-list [data-note-content]"))
+                .map((node, idx) => {
+                    const timeNode = document.querySelector(`#note-items-list [data-note-time="${idx}"]`);
+                    return {
+                        timestamp: (timeNode?.innerText || "").replace("⏱️", "").trim() || "00:00",
+                        content_html: node.innerHTML.trim()
+                    };
+                })
+                .filter((x) => x.content_html);
+
+            try {
+                const payload = await apiRequest(`/api/notes/${appState.currentNoteId}`, {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        video_title: appState.currentNote.video_title,
+                        author: appState.currentNote.author,
+                        description: appState.currentNote.description,
+                        summary: document.getElementById("summary-input").value,
+                        cues,
+                        note_items: noteItems
+                    })
+                });
+                updateEditorNote(payload.note);
+                await loadRecentNotes();
+                await loadLibrary();
+                triggerToast("💾 康奈尔笔记落库成功！已合并入艾宾浩斯追踪序列。");
+            } catch (error) {
+                triggerToast(`⚠️ ${error.message}`);
+            }
+        }
+
+        async function enterQuizMode(noteId, title) {
+            if (!title) {
+                const fallbackTitle = noteId;
+                try {
+                    const payload = await apiRequest("/api/quiz/due");
+                    const matched = (payload.items || []).find((item) => item.video_title === fallbackTitle);
+                    if (matched) {
+                        noteId = matched.note_id;
+                        title = matched.video_title;
+                    }
+                } catch (_error) {
+                    // noop
+                }
+            }
+            if (!noteId) {
+                triggerToast("⚠️ 未找到可复习笔记");
+                return;
+            }
+            appState.activeSessionNoteId = noteId;
+            document.getElementById('quiz-title-node').innerText = title || "视频标题";
+            document.getElementById('quiz-result-layer').classList.add('hidden');
+            document.getElementById('btn-quiz-dontknow').classList.remove('hidden');
+            switchMainView('quiz-session', 'nav-quiz');
+            try {
+                const payload = await apiRequest("/api/quiz/sessions", {
+                    method: "POST",
+                    body: JSON.stringify({ note_id: noteId, limit: 4 })
+                });
+                appState.activeSessionId = payload.session.id;
+                appState.activeSessionTotal = Number(payload.remaining || 1);
+                appState.activeSessionIndex = 1;
+                renderCurrentQuestion(payload.question);
+            } catch (error) {
+                triggerToast(`⚠️ ${error.message}`);
+                switchMainView('quiz', 'nav-quiz');
+            }
+        }
+
+        async function startTodayReview() {
+            try {
+                const payload = await apiRequest("/api/quiz/due");
+                const target = (payload.items || []).find((x) => String(x.status) !== "upcoming");
+                if (!target) {
+                    triggerToast("🎉 今日没有待复习题目");
+                    return;
+                }
+                await enterQuizMode(target.note_id, target.video_title);
+            } catch (_error) {
+                triggerToast("⚠️ 复习任务加载失败");
+            }
+        }
+
+        function renderCurrentQuestion(question) {
+            appState.activeQuestion = question;
+            appState.hasAnsweredCurrent = false;
+            appState.pendingNextQuestion = null;
+            appState.pendingSessionFinished = false;
+            document.getElementById("quiz-result-layer").classList.add("hidden");
+            document.getElementById("btn-quiz-dontknow").classList.remove("hidden");
+            document.getElementById("quiz-question-stem").textContent = question?.stem || "题目加载失败";
+            document.getElementById("quiz-explanation-text").textContent = "";
+            const idx = appState.activeSessionIndex;
+            const total = Math.max(1, appState.activeSessionTotal || 1);
+            document.getElementById("quiz-progress-count").textContent = `要点 ${idx} / ${total}`;
+            document.getElementById("quiz-progress-bar").style.width = `${Math.round((idx / total) * 100)}%`;
+            const optionsRoot = document.getElementById("quiz-options-list");
+            optionsRoot.innerHTML = (question?.options || []).map((opt) => `
+                <button onclick="submitQuizAnswer('${escapeHtml(question.id)}', '${escapeHtml(opt.id)}')" class="w-full text-left p-3 rounded-xl border border-gray-100 hover:bg-gray-50 hover:border-gray-300 transition text-xs font-medium">${escapeHtml(opt.id)}. ${escapeHtml(opt.text)}</button>
+            `).join("");
+        }
+
+        async function submitQuizAnswer(questionId, selectedOptionId) {
+            if (appState.hasAnsweredCurrent) return;
+            appState.hasAnsweredCurrent = true;
+            const optionButtons = Array.from(document.querySelectorAll("#quiz-options-list button"));
+            optionButtons.forEach((btn) => {
+                btn.disabled = true;
+                btn.classList.add("opacity-80", "cursor-not-allowed");
+            });
+            try {
+                const payload = await apiRequest(`/api/quiz/sessions/${appState.activeSessionId}/answer`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        question_id: questionId,
+                        selected_option_id: selectedOptionId
+                    })
+                });
+                const layer = document.getElementById('quiz-result-layer');
+                const statusText = document.getElementById('layer-status-text');
+                const dontknowBtn = document.getElementById('btn-quiz-dontknow');
+                layer.classList.remove('hidden');
+                dontknowBtn.classList.add('hidden');
+                document.getElementById("quiz-explanation-text").innerHTML = `${escapeHtml(payload.correct_option_id || "-")} · ${escapeHtml(payload.explanation || "")}`;
+                if (payload.is_correct) {
+                    statusText.className = "text-xs font-bold text-emerald-600 flex items-center gap-1";
+                    statusText.innerHTML = "<span>✅ 回答正确，继续保持！</span>";
+                } else {
+                    statusText.className = "text-xs font-bold text-rose-600 flex items-center gap-1";
+                    statusText.innerHTML = "<span>❌ 这题答错了，先看解析再继续。</span>";
+                }
+                appState.pendingNextQuestion = payload.next_question || null;
+                appState.pendingSessionFinished = !!payload.is_session_finished;
+                document.getElementById("quiz-next-action-btn").textContent = payload.is_session_finished ? "完成本轮" : "下一题";
+                layer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            } catch (error) {
+                appState.hasAnsweredCurrent = false;
+                optionButtons.forEach((btn) => {
+                    btn.disabled = false;
+                    btn.classList.remove("opacity-80", "cursor-not-allowed");
+                });
+                triggerToast(`⚠️ ${error.message}`);
+            }
+        }
+
+        function triggerSafetyNet() {
+            const layer = document.getElementById('quiz-result-layer');
+            const statusText = document.getElementById('layer-status-text');
+            const dontknowBtn = document.getElementById('btn-quiz-dontknow');
+            layer.classList.remove('hidden');
+            dontknowBtn.classList.add('hidden');
+            statusText.className = "text-xs font-bold text-blue-600 flex items-center gap-1";
+            statusText.innerHTML = "<span>🛡️ 已展开提示网，建议先阅读解释再作答。</span>";
+        }
+
+        async function proceedQuizAfterReview() {
+            if (appState.pendingSessionFinished) {
+                await finishCurrentQuiz();
+                return;
+            }
+            if (appState.pendingNextQuestion) {
+                appState.activeSessionIndex += 1;
+                renderCurrentQuestion(appState.pendingNextQuestion);
+                return;
+            }
+            triggerToast("⚠️ 暂无下一题，请先作答");
+        }
+
+        async function finishCurrentQuiz() {
+            try {
+                if (appState.activeSessionId) {
+                    await apiRequest(`/api/quiz/sessions/${appState.activeSessionId}/complete`, { method: "POST" });
+                }
+                await loadQuizDue();
+            } catch (_error) {
+                // noop
+            }
+            switchMainView('quiz-success', 'nav-quiz');
+            const streak = document.getElementById('streak-days');
+            if (streak) streak.innerText = String(Number(streak.innerText || "7") + 1);
+            appState.activeSessionId = null;
+            appState.activeQuestion = null;
+        }
+
+        let librarySearchTimer = null;
+        document.getElementById("library-search-input").addEventListener("input", () => {
+            if (librarySearchTimer) window.clearTimeout(librarySearchTimer);
+            librarySearchTimer = window.setTimeout(() => {
+                loadLibrary();
+            }, 250);
+        });
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderTaskHistory();
+            refreshProcessCenterBadge();
+            loadRecentNotes();
+            loadLibrary();
+            loadQuizDue();
+        });
+    </script>
+</body>
+</html>

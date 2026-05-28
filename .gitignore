@@ -1,0 +1,12 @@
+.DS_Store
+.venv/
+__pycache__/
+*.pyc
+
+.cursor/
+
+data/asr_*.mp3
+data/asr_chunks_*/
+data/transcript_cache.json
+data/summary_cache.json
+data/ai_config.json
