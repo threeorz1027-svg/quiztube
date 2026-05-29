@@ -1422,7 +1422,7 @@
                 const etaNode = document.querySelector("#view-quiz .bg-emerald-50\\/70 p.text-xl");
                 if (etaNode) etaNode.innerText = `${Math.max(1, rounds * 2)} 分钟`;
             } catch (_error) {
-                triggerToast("⚠️ 复习任务加载失败");
+                triggerToast("⚠️ 使用前请先配置API");
             }
         }
 
@@ -1886,7 +1886,7 @@
                 }
                 await enterQuizMode(target.note_id, target.video_title);
             } catch (_error) {
-                triggerToast("⚠️ 复习任务加载失败");
+                triggerToast("⚠️ 使用前请先配置API");
             }
         }
 
